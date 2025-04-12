@@ -3,9 +3,9 @@
 import { startup } from "./startup";
 
 registerPlugin({
-	name: "Name of your plugin",
+	name: "OpenRCT2 Award Eligibility",
 	version: "1.0",
-	authors: [ "Your name" ],
+	authors: [ "peterwooley" ],
 	type: "remote",
 	licence: "MIT",
 	/**
@@ -14,6 +14,6 @@ registerPlugin({
 	 * version. Version 70 equals the v0.4.4 release.
 	 * @see https://github.com/OpenRCT2/OpenRCT2/blob/v0.4.4/src/openrct2/scripting/ScriptEngine.h#L50
 	 */
-	targetApiVersion: 70,
+	targetApiVersion: 104,
 	main: startup,
 });

@@ -1,20 +1,11 @@
-function onClickMenuItem()
-{
-	// Write code here that should happen when the player clicks the menu item under the map icon.
+import { getAwardsWindow } from "./ui";
 
-	console.log("Hello world!");
-}
-
-
-export function startup()
-{
-	// Write code here that should happen on startup of the plugin.
-
-
-
-	// Register a menu item under the map icon:
-	if (typeof ui !== "undefined")
-	{
-		ui.registerMenuItem("My plugin", () => onClickMenuItem());
-	}
+export function startup() {
+  // Register a menu item under the map icon:
+  if (typeof ui !== "undefined") {
+    ui.registerMenuItem("Award Eligibility", () => {
+      // Show the awards window when the player clicks the menu item under the map icon.
+      getAwardsWindow().open();
+    });
+  }
 }
