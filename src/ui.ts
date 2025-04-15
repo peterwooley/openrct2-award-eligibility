@@ -11,8 +11,9 @@ import {
   window,
   compute,
   WritableStore,
+  Colour,
 } from "openrct2-flexui";
-import { awards } from "./awards";
+import { AwardsManager } from "./awards";
 
 type AwardWidget = WidgetCreator<FlexiblePosition, Parsed<FlexiblePosition>>;
 
@@ -27,6 +28,8 @@ interface RequirementResult {
   met: WritableStore<boolean>;
 }
 
+const awards = AwardsManager.getAwards();
+
 const viewmodel = {
   nextUpdate: 0,
   items: Array<AwardModel>(awards.length),
@@ -38,21 +41,30 @@ const viewmodel = {
     if (tickCount < this.nextUpdate) return;
     this.nextUpdate = tickCount + 40;
 
-    //const start = new Date();
+    const start = new Date();
     this.redraw();
-    //console.log(`Awards window updated in ${new Date().getTime() - start.getTime()}ms`);
+    console.log(`Awards window updated in ${new Date().getTime() - start.getTime()}ms`);
   },
 
   redraw(): void {
+    AwardsManager.updateGuests();
     awards.forEach((award, i) => {
+      let isEligible = true;
       award.requirements.forEach((req, j) => {
-        //const start = new Date();
+        const start = new Date();
         const result = req();
-        //const middle = new Date();
+
+        if (!result.met) {
+          isEligible = false;
+        }
+
+        const middle = new Date();
         this.items[i].requirements[j].text.set(result.text);
         this.items[i].requirements[j].met.set(result.met);
-        //console.log(`req() took ${new Date().getTime() - start.getTime()}ms and set() took ${new Date().getTime() - middle.getTime()}ms`);
+        console.log(`${award.name}: req() took ${new Date().getTime() - start.getTime()}ms and set() took ${new Date().getTime() - middle.getTime()}ms`);
       });
+
+      this.items[i].name.set(award.formatName(isEligible));
     });
   },
 
@@ -120,6 +132,7 @@ export function getAwardsWindow(): WindowTemplate {
     width: 500,
     height: 400,
     title: "Award Eligibility",
+    colours: [Colour.DarkYellow, Colour.Yellow],
     content: viewmodel.container,
     onUpdate: () => viewmodel.check(),
   }));

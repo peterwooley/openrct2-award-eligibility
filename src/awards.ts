@@ -1,3 +1,92 @@
+const RIDE_LIFECYCLE_CRASHED = 1 << 10;
+const RIDE_LIFECYCLE_NOT_CUSTOM_DESIGN = 1 << 18;
+
+// TODO: See if API allows checking for ride category, or request it to be added to the API
+const GENTLE_RIDE_IDS = [
+  11, // Car Ride
+  14, // Observation Tower
+  20, // Maze
+  21, // Spiral Slide
+  25, // Dodgems
+  33, // Merry-Go-Round
+  37, // Ferris Wheel
+  41, // Space Rings
+  47, // Haunted House
+  49, // Circus
+  50, // Ghost Train
+  67, // Mini Golf
+  70, // Flying Saucers
+  71, // Crooked House
+  72, // Monorail Cycles
+  88, // Mini Helicopters, I think...
+];
+const ROLLER_COASTER_IDS = [
+  0, // Spiral Roller Coaster
+  1, // Stand-Up Roller Coaster
+  2, // Suspended Swinging Coaster
+  3, // Inverted Roller Coaster
+  4, // Junior Roller Coaster
+  7, // Mini Suspended Coaster
+  9, // Wooden Wild Mouse
+  10, // Steeplechase
+  13, // Mine Train Coaster
+  15, // Bobsleigh Coaster
+  17, // Looping Roller Coaster
+  18, // Mine Train Coaster
+  19, // Corkscrew Roller Coaster
+  42, // Reverse Freefall Coaster
+  44, // Vertical Drop Roller Coaster
+  51, // Twister Roller Coaster
+  52, // Wooden Roller Coaster
+  53, // Side Friction Roller Coaster
+  54, // Steel Wild Mouse
+  55, // Multi-Dimension Roller Coaster
+  56, // Multi-Dimension Roller Coaster (Alt)
+  57, // Flying Roller Coaster
+  58, // Flying Roller Coaster (Alt)
+  59, // Virginia Reel
+  62, // Lay Down Roller Coaster
+  64, // Lay Down Roller Coaster (Alt)
+  65, // Reverser Roller Coaster
+  66, // Heartline Twister Coaster
+  68, // Giga Coaster
+  73, // Compact Inverted Coaster
+  74, // Water Coaster
+  75, // Air Powered Vertical Coaster
+  76, // Inverted Hairpin Coaster
+  86, // Inverted Impulse Coaster
+  87, // Mini Roller Coaster
+  88, // Mine Ride
+  90, // LIM Launched Roller Coaster
+  91, // Hypercoaster
+  92, // Hyper Twister
+  94, // Spinning Wild Mouse
+  95, // Classic Mini Roller Coaster
+  96, // Hybrid Coaster
+  97, // Single Rail Roller Coaster
+  98, // Alpine Coaster
+  99, // Classic Wooden Roller Coaster
+  100, // Classic Stand-Up Roller Coaster
+  101, // LSM Launched Roller Coaster
+  102, // Classic Wooden Twister Roller Coaster
+];
+const WATER_RIDE_IDS = [
+  8, // Boat Hire
+  16, // Dinghy Slide
+  23, // Log Flume
+  24, // River Rapids
+  60, // Splash Boats
+  74, // Water Coaster
+  79, // River Rafts
+];
+
+const DAZZLING_COLOURS = [
+  5, // Bright purple
+  14, // Bright green
+  20, // Light orange
+  30, // Bright pink
+];
+
 export class Award {
   name: string;
   icon: number;
@@ -17,8 +106,8 @@ export class Award {
     return this.requirements.every((requirement) => requirement().met);
   }
 
-  formatName(): string {
-    return this.isEligible() ? `{GREEN}${this.name}` : this.name;
+  formatName(isEligible: boolean = false): string {
+    return isEligible ? `{GREEN}${this.name}` : this.name;
   }
 }
 
@@ -57,19 +146,12 @@ const bestParkToiletsAward = new Award({
       };
     },
     () => {
-      const guests = map.getAllEntities("guest");
-
-      const guestsNeedingRestroom = guests.filter((guest) =>
-        guest.thoughts.some(
-          (thought) => thought.freshness <= 5 && thought.type === "toilet"
-        )
-      );
-
-      const met = guestsNeedingRestroom.length <= 16;
+      let guestsNeedingRestroom = AwardsManager.thoughts.toilet;
+      const met = guestsNeedingRestroom <= 16;
 
       return {
         text: status(
-          `16 or fewer guests needing bathroom (Currently: ${guestsNeedingRestroom.length})`,
+          `16 or fewer guests needing bathroom (Currently: ${guestsNeedingRestroom})`,
           met
         ),
         met,
@@ -83,20 +165,10 @@ const mostUntidyParkAward = new Award({
   icon: 5469,
   requirements: [
     () => {
-      let negativeCount = 0;
-      const guests = map.getAllEntities("guest");
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (
-            thought.freshness <= 5 &&
-            (thought.type == "bad_litter" ||
-              thought.type == "path_disgusting" ||
-              thought.type == "vandalism")
-          ) {
-            negativeCount++;
-          }
-        }
-      }
+      let negativeCount =
+        (AwardsManager.thoughts.bad_litter || 0) +
+        (AwardsManager.thoughts.path_disgusting || 0) +
+        (AwardsManager.thoughts.vandalism || 0);
       const met = negativeCount > park.guests / 16;
       return {
         text: status(
@@ -116,20 +188,10 @@ const tidiestParkAward = new Award({
   icon: 5470,
   requirements: [
     () => {
-      const guests = map.getAllEntities("guest");
-      let negativeCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (
-            thought.freshness <= 5 &&
-            (thought.type == "bad_litter" ||
-              thought.type == "path_disgusting" ||
-              thought.type == "vandalism")
-          ) {
-            negativeCount++;
-          }
-        }
-      }
+      let negativeCount =
+        (AwardsManager.thoughts.bad_litter || 0) +
+        (AwardsManager.thoughts.path_disgusting || 0) +
+        (AwardsManager.thoughts.vandalism || 0);
 
       const met = negativeCount <= 5;
       return {
@@ -141,16 +203,7 @@ const tidiestParkAward = new Award({
       };
     },
     () => {
-      const guests = map.getAllEntities("guest");
-      let positiveCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (thought.freshness <= 5 && thought.type == "very_clean") {
-            positiveCount++;
-          }
-        }
-      }
-
+      let positiveCount = AwardsManager.thoughts.very_clean || 0;
       const met = positiveCount > park.guests / 64;
       return {
         text: status(
@@ -165,125 +218,25 @@ const tidiestParkAward = new Award({
   ],
 });
 
-// TODO: Filter all rides to find roller coasters that haven't crashed
-// Use this to find roller coasters
-// enum
-// {
-//   RIDE_TYPE_SPIRAL_ROLLER_COASTER = 0,
-//   RIDE_TYPE_STAND_UP_ROLLER_COASTER,
-//   RIDE_TYPE_SUSPENDED_SWINGING_COASTER,
-//   RIDE_TYPE_INVERTED_ROLLER_COASTER,
-//   RIDE_TYPE_JUNIOR_ROLLER_COASTER,
-//   RIDE_TYPE_MINIATURE_RAILWAY,
-//   RIDE_TYPE_MONORAIL,
-//   RIDE_TYPE_MINI_SUSPENDED_COASTER,
-//   RIDE_TYPE_BOAT_HIRE,
-//   RIDE_TYPE_WOODEN_WILD_MOUSE,
-//   RIDE_TYPE_STEEPLECHASE = 10,
-//   RIDE_TYPE_CAR_RIDE,
-//   RIDE_TYPE_LAUNCHED_FREEFALL,
-//   RIDE_TYPE_BOBSLEIGH_COASTER,
-//   RIDE_TYPE_OBSERVATION_TOWER,
-//   RIDE_TYPE_LOOPING_ROLLER_COASTER,
-//   RIDE_TYPE_DINGHY_SLIDE,
-//   RIDE_TYPE_MINE_TRAIN_COASTER,
-//   RIDE_TYPE_CHAIRLIFT,
-//   RIDE_TYPE_CORKSCREW_ROLLER_COASTER,
-//   RIDE_TYPE_MAZE = 20,
-//   RIDE_TYPE_SPIRAL_SLIDE,
-//   RIDE_TYPE_GO_KARTS,
-//   RIDE_TYPE_LOG_FLUME,
-//   RIDE_TYPE_RIVER_RAPIDS,
-//   RIDE_TYPE_DODGEMS,
-//   RIDE_TYPE_SWINGING_SHIP,
-//   RIDE_TYPE_SWINGING_INVERTER_SHIP,
-//   RIDE_TYPE_FOOD_STALL,
-//   RIDE_TYPE_1D,
-//   RIDE_TYPE_DRINK_STALL = 30,
-//   RIDE_TYPE_1F,
-//   RIDE_TYPE_SHOP,
-//   RIDE_TYPE_MERRY_GO_ROUND,
-//   RIDE_TYPE_22,
-//   RIDE_TYPE_INFORMATION_KIOSK,
-//   RIDE_TYPE_TOILETS,
-//   RIDE_TYPE_FERRIS_WHEEL,
-//   RIDE_TYPE_MOTION_SIMULATOR,
-//   RIDE_TYPE_3D_CINEMA,
-//   RIDE_TYPE_TOP_SPIN = 40,
-//   RIDE_TYPE_SPACE_RINGS,
-//   RIDE_TYPE_REVERSE_FREEFALL_COASTER,
-//   RIDE_TYPE_LIFT,
-//   RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER,
-//   RIDE_TYPE_CASH_MACHINE,
-//   RIDE_TYPE_TWIST,
-//   RIDE_TYPE_HAUNTED_HOUSE,
-//   RIDE_TYPE_FIRST_AID,
-//   RIDE_TYPE_CIRCUS,
-//   RIDE_TYPE_GHOST_TRAIN = 50,
-//   RIDE_TYPE_TWISTER_ROLLER_COASTER,
-//   RIDE_TYPE_WOODEN_ROLLER_COASTER,
-//   RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER,
-//   RIDE_TYPE_STEEL_WILD_MOUSE,
-//   RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER,
-//   RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT,
-//   RIDE_TYPE_FLYING_ROLLER_COASTER,
-//   RIDE_TYPE_FLYING_ROLLER_COASTER_ALT,
-//   RIDE_TYPE_VIRGINIA_REEL,
-//   RIDE_TYPE_SPLASH_BOATS = 60,
-//   RIDE_TYPE_MINI_HELICOPTERS,
-//   RIDE_TYPE_LAY_DOWN_ROLLER_COASTER,
-//   RIDE_TYPE_SUSPENDED_MONORAIL,
-//   RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT,
-//   RIDE_TYPE_REVERSER_ROLLER_COASTER,
-//   RIDE_TYPE_HEARTLINE_TWISTER_COASTER,
-//   RIDE_TYPE_MINI_GOLF,
-//   RIDE_TYPE_GIGA_COASTER,
-//   RIDE_TYPE_ROTO_DROP,
-//   RIDE_TYPE_FLYING_SAUCERS = 70,
-//   RIDE_TYPE_CROOKED_HOUSE,
-//   RIDE_TYPE_MONORAIL_CYCLES,
-//   RIDE_TYPE_COMPACT_INVERTED_COASTER,
-//   RIDE_TYPE_WATER_COASTER,
-//   RIDE_TYPE_AIR_POWERED_VERTICAL_COASTER,
-//   RIDE_TYPE_INVERTED_HAIRPIN_COASTER,
-//   RIDE_TYPE_MAGIC_CARPET,
-//   RIDE_TYPE_SUBMARINE_RIDE,
-//   RIDE_TYPE_RIVER_RAFTS,
-//   RIDE_TYPE_50 = 80,
-//   RIDE_TYPE_ENTERPRISE,
-//   RIDE_TYPE_52,
-//   RIDE_TYPE_53,
-//   RIDE_TYPE_54,
-//   RIDE_TYPE_55,
-//   RIDE_TYPE_INVERTED_IMPULSE_COASTER,
-//   RIDE_TYPE_MINI_ROLLER_COASTER,
-//   RIDE_TYPE_MINE_RIDE,
-//   RIDE_TYPE_59,
-//   RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER = 90,
-//   RIDE_TYPE_HYPERCOASTER,
-//   RIDE_TYPE_HYPER_TWISTER,
-//   RIDE_TYPE_MONSTER_TRUCKS,
-//   RIDE_TYPE_SPINNING_WILD_MOUSE,
-//   RIDE_TYPE_CLASSIC_MINI_ROLLER_COASTER,
-//   RIDE_TYPE_HYBRID_COASTER,
-//   RIDE_TYPE_SINGLE_RAIL_ROLLER_COASTER,
-//   RIDE_TYPE_ALPINE_COASTER,
-//   RIDE_TYPE_CLASSIC_WOODEN_ROLLER_COASTER,
-//   RIDE_TYPE_CLASSIC_STAND_UP_ROLLER_COASTER,
-//   RIDE_TYPE_LSM_LAUNCHED_ROLLER_COASTER,
-//   RIDE_TYPE_CLASSIC_WOODEN_TWISTER_ROLLER_COASTER,
-
-//   RIDE_TYPE_COUNT
-// };
 const bestRollerCoastersAward = new Award({
   name: "Award for the park with the best roller coasters",
   icon: 5471,
   requirements: [
     () => {
-      const met = false; // TODO: Implement logic for roller coasters
+      let coasterCount = 0;
+      for (const ride of map.rides) {
+        if (
+          ROLLER_COASTER_IDS.indexOf(ride.type) !== -1 &&
+          ride.status === "open" &&
+          !(ride.lifecycleFlags & RIDE_LIFECYCLE_CRASHED)
+        ) {
+          coasterCount++;
+        }
+      }
+      const met = coasterCount >= 6;
       return {
         text: status(
-          `TODO: 6 open roller coasters that haven't crashed (Currently: ?)`,
+          `6 or more open roller coasters that haven't crashed (Currently: ${coasterCount})`,
           met
         ),
         met,
@@ -350,16 +303,29 @@ const worstValueParkAward = new Award({
   ],
 });
 
-// TODO: Figure out how to filter only custom rides with tracks
 const bestCustomDesignedRidesAward = new Award({
   name: "Best custom-designed rides award",
   icon: 5482,
   requirements: [
     () => {
-      const met = false; // TODO: Implement logic for custom-designed rides
+      let customRideCount = 0;
+      for (const ride of map.rides) {
+        if (
+          // TODO: Missing check for RtdFlag::hasTrack, but not sure if it's available in the API or matters
+          ride.lifecycleFlags & RIDE_LIFECYCLE_NOT_CUSTOM_DESIGN ||
+          ride.excitement < 5.5 ||
+          ride.status !== "open" ||
+          ride.lifecycleFlags & RIDE_LIFECYCLE_CRASHED
+        ) {
+          continue;
+        }
+
+        customRideCount++;
+      }
+      const met = customRideCount >= 6;
       return {
         text: status(
-          `TODO: At least 6 custom-designed rides (Currently: X)`,
+          `At least 6 open custom-designed rides that haven't crashed (Currently: ${customRideCount})`,
           met
         ),
         met,
@@ -373,20 +339,10 @@ const mostBeautifulParkAward = new Award({
   icon: 5473,
   requirements: [
     () => {
-      const guests = map.getAllEntities("guest");
-      let negativeCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (
-            thought.freshness <= 5 &&
-            (thought.type == "bad_litter" ||
-              thought.type == "path_disgusting" ||
-              thought.type == "vandalism")
-          ) {
-            negativeCount++;
-          }
-        }
-      }
+      const negativeCount =
+        (AwardsManager.thoughts.bad_litter || 0) +
+        (AwardsManager.thoughts.path_disgusting || 0) +
+        (AwardsManager.thoughts.vandalism || 0);
 
       const met = negativeCount <= 15;
       return {
@@ -398,16 +354,7 @@ const mostBeautifulParkAward = new Award({
       };
     },
     () => {
-      const guests = map.getAllEntities("guest");
-      let positiveCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (thought.freshness <= 5 && thought.type == "scenery") {
-            positiveCount++;
-          }
-        }
-      }
-
+      const positiveCount = AwardsManager.thoughts.scenery || 0;
       const met = positiveCount > park.guests / 128;
       return {
         text: status(
@@ -461,16 +408,7 @@ const safestParkAward = new Award({
   icon: 5475,
   requirements: [
     () => {
-      let vandalismThoughts = 0;
-      const guests = map.getAllEntities("guest");
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (thought.freshness <= 5 && thought.type === "vandalism") {
-            vandalismThoughts++;
-          }
-        }
-      }
-
+      const vandalismThoughts = AwardsManager.thoughts.vandalism || 0;
       const met = vandalismThoughts <= 2;
 
       return {
@@ -547,16 +485,7 @@ const bestParkFoodAward = new Award({
       };
     },
     () => {
-      const guests = map.getAllEntities("guest");
-      let hungryCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (thought.freshness <= 5 && thought.type == "hungry") {
-            hungryCount++;
-          }
-        }
-      }
-
+      const hungryCount = AwardsManager.thoughts.hungry || 0;
       const met = hungryCount <= 12;
       return {
         text: status(
@@ -611,15 +540,7 @@ const worstParkFoodAward = new Award({
       };
     },
     () => {
-      let guests = map.getAllEntities("guest");
-      let hungryCount = 0;
-      for (const guest of guests) {
-        for (const thought of guest.thoughts) {
-          if (thought.freshness <= 5 && thought.type == "hungry") {
-            hungryCount++;
-          }
-        }
-      }
+      const hungryCount = AwardsManager.thoughts.hungry || 0;
       const met = hungryCount > 15;
       return {
         text: status(
@@ -632,9 +553,206 @@ const worstParkFoodAward = new Award({
   ],
 });
 
+const mostDisappointingParkAward = new Award({
+  name: "Most disappointing park award",
+  icon: 5480,
+  requirements: [
+    () => {
+      const met = park.rating <= 650;
+      return {
+        text: status(
+          `Park rating is 650 or less (Currently: ${park.rating})`,
+          met
+        ),
+        met,
+      };
+    },
+    () => {
+      const met = false;
+      return {
+        text: status(
+          `TODO: More than half of rides have a satisfaction of 6 or less`,
+          met
+        ),
+        met,
+      };
+    },
+  ],
+});
+
+const bestWaterRidesAward = new Award({
+  name: "Best water rides award",
+  icon: 5481,
+  requirements: [
+    () => {
+      let waterRideCount = 0;
+      for (const ride of map.rides) {
+        if (
+          WATER_RIDE_IDS.indexOf(ride.type) !== -1 &&
+          ride.status === "open" &&
+          !(ride.lifecycleFlags & RIDE_LIFECYCLE_CRASHED)
+        ) {
+          waterRideCount++;
+        }
+      }
+      const met = waterRideCount >= 6;
+      return {
+        text: status(
+          `At least 6 water rides are open and haven't crashed (Currently: ${waterRideCount})`,
+          met
+        ),
+        met,
+      };
+    },
+  ],
+});
+
+const mostConfusingParkLayoutAward = new Award({
+  name: "Most confusing park layout award",
+  icon: 5484,
+  requirements: [
+    () => {
+      const lostGuestsCount = (AwardsManager.thoughts.lost || 0) + (AwardsManager.thoughts.cant_find || 0);
+      const met = lostGuestsCount >= 10 && lostGuestsCount > park.guests / 64;
+      return {
+        text: status(
+          `More than 15 guests are lost (Currently: ${lostGuestsCount})`,
+          met
+        ),
+        met,
+      };
+    },
+  ],
+});
+
+const bestGentleRideAward = new Award({
+  name: "Best gentle ride award",
+  icon: 5485,
+  requirements: [
+    () => {
+      let gentleRideCount = 0;
+      for (const ride of map.rides) {
+        if (
+          GENTLE_RIDE_IDS.indexOf(ride.type) !== -1 &&
+          ride.status === "open" &&
+          !(ride.lifecycleFlags & RIDE_LIFECYCLE_CRASHED)
+        ) {
+          gentleRideCount++;
+        }
+      }
+      const met = gentleRideCount >= 10;
+      return {
+        text: status(
+          `At least 10 gentle rides are open and haven't crashed (Currently: ${gentleRideCount})`,
+          met
+        ),
+        met,
+      };
+    },
+  ],
+});
+
+const mostDazzlingRideColourSchemeAward = new Award({
+  name: "Most dazzling ride colour scheme award",
+  icon: 5483,
+  requirements: [
+    () => {
+      let dazzlingRideCount = 0;
+      for (const ride of map.rides) {
+        if (
+          ride.classification === "ride" &&
+          ride.colourSchemes.some(
+            (scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1
+          )
+        ) {
+          dazzlingRideCount++;
+        }
+      }
+      const met = dazzlingRideCount >= 5;
+      return {
+        text: status(
+          `At least 5 rides with dazzling colour schemes (Currently: ${dazzlingRideCount})`,
+          met
+        ),
+        met,
+      };
+    },
+    () => {
+      let dazzlingRideCount = 0;
+      let rideCount = 0;
+      for (const ride of map.rides) {
+        if (ride.classification !== "ride") continue;
+
+        rideCount++;
+
+        if (
+          ride.colourSchemes.some(
+            (scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1
+          )
+        ) {
+          dazzlingRideCount++;
+        }
+      }
+      const met = dazzlingRideCount >= rideCount - dazzlingRideCount;
+      return {
+        text: status(
+          `Half or more rides (${Math.ceil(
+            rideCount / 2
+          )}) have a dazzling colour scheme (Currently: ${dazzlingRideCount})`,
+          met
+        ),
+        met,
+      };
+    },
+  ],
+});
+
+export class AwardsManager {
+  static thoughts: Record<string, number> = {};
+  static thoughtTypes = [
+    "toilet",
+    "bad_litter",
+    "path_disgusting",
+    "vandalism",
+    "very_clean",
+    "scenery",
+    "hungry",
+    "lost",
+    "cant_find",
+  ];
+
+  static updateGuests(): void {
+    const start = new Date();
+    const guests = map.getAllEntities("guest");
+
+    AwardsManager.thoughts = {};
+
+    for (const guest of guests) {
+      for (const thought of guest.thoughts) {
+        if (
+          thought.freshness <= 5 &&
+          AwardsManager.thoughtTypes.indexOf(thought.type) !== -1
+        ) {
+          AwardsManager.thoughts[thought.type] =
+            (AwardsManager.thoughts[thought.type] || 0) + 1;
+        }
+      }
+    }
+
+    const end = new Date();
+    console.log(
+      `AwardsManager.updateGuests() took ${end.getTime() - start.getTime()}ms`
+    );
+  }
+
+  static getAwards(): Award[] {
+    return awards;
+  }
+}
+AwardsManager.updateGuests(); // Initialize the guests array
+
 // Exported awards array
-export const awards: Award[] = [
-  // Hidden for dev testing
+const awards: Award[] = [
   mostUntidyParkAward,
   tidiestParkAward,
   bestRollerCoastersAward,
@@ -646,9 +764,36 @@ export const awards: Award[] = [
   bestParkFoodAward,
   worstParkFoodAward,
   bestParkToiletsAward,
-  // TODO: mostDisappointingParkAward,
-  // TODO: bestWaterRidesAward,
+  mostDisappointingParkAward,
+  bestWaterRidesAward,
   bestCustomDesignedRidesAward,
-  // TODO: mostDazzlingRideColourSchemeAward,
-  // TODO: bestGentleRideAward
+  mostDazzlingRideColourSchemeAward,
+  mostConfusingParkLayoutAward,
+  bestGentleRideAward,
 ];
+
+const categorizedAwards = {
+  park: [
+    tidiestParkAward,
+    bestValueParkAward,
+    mostBeautifulParkAward,
+    safestParkAward,
+    bestStaffAward,
+    bestParkFoodAward,
+    bestParkToiletsAward,
+  ],
+  rides: [
+    bestRollerCoastersAward,
+    bestWaterRidesAward,
+    bestCustomDesignedRidesAward,
+    mostDazzlingRideColourSchemeAward,
+    bestGentleRideAward,
+  ],
+  negative: [
+    mostUntidyParkAward,
+    worstValueParkAward,
+    worstParkFoodAward,
+    mostDisappointingParkAward,
+    mostConfusingParkLayoutAward,
+  ],
+};
