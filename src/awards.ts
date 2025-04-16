@@ -112,9 +112,21 @@ export class Award {
 }
 
 function status(string: string, met: boolean): string {
-  return met
-    ? `{INLINE_SPRITE}{161}{15}{00}{00} ${string}`
-    : `{INLINE_SPRITE}{162}{15}{00}{00}  ${string}`;
+  return met ? `{INLINE_SPRITE}{161}{15}{00}{00} ${string}` : `{INLINE_SPRITE}{162}{15}{00}{00}  ${string}`;
+}
+
+class AwardsCategory {
+  image: number;
+  id: string;
+  name: string;
+  awards: Award[];
+
+  constructor(params: { image: number; id: string; name: string; awards: Award[] }) {
+    this.image = params.image;
+    this.id = params.id;
+    this.name = params.name;
+    this.awards = params.awards;
+  }
 }
 
 // Individual award instances
@@ -126,7 +138,7 @@ const bestParkToiletsAward = new Award({
       const restrooms = map.rides.filter((ride) => ride.type === 36); // 36 = Restroom ID
       const met = restrooms.length >= 4;
       return {
-        text: status(`${restrooms.length} of 4 required restrooms`, met),
+        text: status(`4 or more restrooms (Now: ${restrooms.length})`, met),
         met,
       };
     },
@@ -136,10 +148,7 @@ const bestParkToiletsAward = new Award({
       const met = restrooms.length >= guests.length / 128;
       return {
         text: status(
-          `1 restroom per 128 guests (Currently: ${(
-            restrooms.length /
-            (guests.length / 128)
-          ).toFixed(2)})`,
+          `At least 1 restroom per 128 guests (Now: ${(restrooms.length / (guests.length / 128) || 0).toFixed(2)})`,
           met
         ),
         met,
@@ -150,10 +159,7 @@ const bestParkToiletsAward = new Award({
       const met = guestsNeedingRestroom <= 16;
 
       return {
-        text: status(
-          `16 or fewer guests needing bathroom (Currently: ${guestsNeedingRestroom})`,
-          met
-        ),
+        text: status(`16 or fewer guests need to use bathroom (Now: ${guestsNeedingRestroom})`, met),
         met,
       };
     },
@@ -174,7 +180,7 @@ const mostUntidyParkAward = new Award({
         text: status(
           `More than ${Math.floor(
             park.guests / 16
-          )} (1/16th) of the guests think the park is untidy (Currently: ${negativeCount})`,
+          )} (1/16th of the guests) think the park is untidy (Now: ${negativeCount})`,
           met
         ),
         met,
@@ -195,10 +201,7 @@ const tidiestParkAward = new Award({
 
       const met = negativeCount <= 5;
       return {
-        text: status(
-          `6 or fewer guests think the park is untidy (Currently: ${negativeCount})`,
-          met
-        ),
+        text: status(`6 or fewer guests think the park is untidy (Now: ${negativeCount})`, met),
         met,
       };
     },
@@ -209,7 +212,7 @@ const tidiestParkAward = new Award({
         text: status(
           `More than ${Math.floor(
             park.guests / 64
-          )} (1/64th) of the guests think the park is tidy (Currently: ${positiveCount})`,
+          )} (1/64th of the guests) think the park is tidy (Now: ${positiveCount})`,
           met
         ),
         met,
@@ -235,10 +238,7 @@ const bestRollerCoastersAward = new Award({
       }
       const met = coasterCount >= 6;
       return {
-        text: status(
-          `6 or more open roller coasters that haven't crashed (Currently: ${coasterCount})`,
-          met
-        ),
+        text: status(`6 or more open roller coasters that haven't crashed (Now: ${coasterCount})`, met),
         met,
       };
     },
@@ -250,19 +250,21 @@ const bestValueParkAward = new Award({
   icon: 5472,
   requirements: [
     () => {
-      const met = !park.getFlag("freeParkEntry");
+      const met = !(park.getFlag("freeParkEntry") || park.getFlag("noMoney") || park.entranceFee === 0);
       return {
-        text: status(`Must have an entrance fee (Currently: free)`, met),
+        text: status(
+          `Must have an entrance fee (Now: ${
+            park.entranceFee ? context.formatString("{CURRENCY}", park.entranceFee) : "free"
+          })`,
+          met
+        ),
         met,
       };
     },
     () => {
       const met = park.totalRideValueForMoney >= 10;
       return {
-        text: status(
-          `Total ride value for money more than 10 (Currently: ${park.totalRideValueForMoney})`,
-          met
-        ),
+        text: status(`Total ride value for money higher than 10 (Now: ${park.totalRideValueForMoney})`, met),
         met,
       };
     },
@@ -270,7 +272,9 @@ const bestValueParkAward = new Award({
       const met = park.entranceFee + 0.1 <= park.totalRideValueForMoney / 2;
       return {
         text: status(
-          `Entrance fee must be less than half the total ride value for money (Currently: ${park.entranceFee})`,
+          `Entrance fee must be less than half total ride value for money (Now: ${park.entranceFee} < ${
+            park.totalRideValueForMoney / 2
+          })`,
           met
         ),
         met,
@@ -284,9 +288,14 @@ const worstValueParkAward = new Award({
   icon: 5474,
   requirements: [
     () => {
-      const met = !park.getFlag("freeParkEntry") || park.entranceFee > 0;
+      const met = !(park.getFlag("freeParkEntry") || park.getFlag("noMoney") || park.entranceFee === 0);
       return {
-        text: status(`Must have an entrance fee (Currently: free)`, met),
+        text: status(
+          `Must have an entrance fee (Now: ${
+            park.entranceFee ? context.formatString("{CURRENCY}", park.entranceFee) : "free"
+          })`,
+          met
+        ),
         met,
       };
     },
@@ -294,7 +303,9 @@ const worstValueParkAward = new Award({
       const met = park.entranceFee > park.totalRideValueForMoney;
       return {
         text: status(
-          `Entrance fee must be more than the total ride value for money (Currently: ${park.entranceFee})`,
+          `Entrance fee must be more than the total ride value for money (Now: ${park.entranceFee} > ${
+            park.totalRideValueForMoney / 2
+          })`,
           met
         ),
         met,
@@ -324,10 +335,7 @@ const bestCustomDesignedRidesAward = new Award({
       }
       const met = customRideCount >= 6;
       return {
-        text: status(
-          `At least 6 open custom-designed rides that haven't crashed (Currently: ${customRideCount})`,
-          met
-        ),
+        text: status(`At least 6 open custom-designed rides that haven't crashed (Now: ${customRideCount})`, met),
         met,
       };
     },
@@ -346,10 +354,7 @@ const mostBeautifulParkAward = new Award({
 
       const met = negativeCount <= 15;
       return {
-        text: status(
-          `15 or fewer guests think the park is ugly (Currently: ${negativeCount})`,
-          met
-        ),
+        text: status(`15 or fewer guests think the park is ugly (Now: ${negativeCount})`, met),
         met,
       };
     },
@@ -360,7 +365,7 @@ const mostBeautifulParkAward = new Award({
         text: status(
           `More than ${Math.floor(
             park.guests / 128
-          )} (1/64th) of the guests think the park is beautiful (Currently: ${positiveCount})`,
+          )} (1/128th of the guests) think the park is beautiful (Now: ${positiveCount})`,
           met
         ),
         met,
@@ -377,23 +382,16 @@ const bestStaffAward = new Award({
       const staff = map.getAllEntities("staff");
       const met = staff.length >= 20;
       return {
-        text: status(
-          `At least 20 staff members (Currently: ${staff.length})`,
-          met
-        ),
+        text: status(`At least 20 staff members (Now: ${staff.length})`, met),
         met,
       };
     },
     () => {
       const staff = map.getAllEntities("staff").length;
-      const guests = park.guests;
-      const met = staff >= guests / 32;
+      const met = staff >= park.guests / 32;
       return {
         text: status(
-          `At least 1 staff for every 32 guests (Currently: ${(
-            staff /
-            (guests / 32)
-          ).toFixed(2)})`,
+          `At least 1 staff for every 32 guests (Now: ${(staff / (park.guests / 32) || 0).toFixed(2)})`,
           met
         ),
         met,
@@ -412,17 +410,14 @@ const safestParkAward = new Award({
       const met = vandalismThoughts <= 2;
 
       return {
-        text: status(
-          `2 or fewer guests think the vandalism in the park is bad (Currently: ${vandalismThoughts})`,
-          met
-        ),
+        text: status(`2 or fewer guests think the vandalism in the park is bad (Now: ${vandalismThoughts})`, met),
         met,
       };
     },
     () => {
       const met = false;
       return {
-        text: status(`TODO: No recent crashes`, met),
+        text: status(`Not Yet Implemented: No recent crashes`, met),
         met,
       };
     },
@@ -434,24 +429,17 @@ const bestParkFoodAward = new Award({
   icon: 5477,
   requirements: [
     () => {
-      const stalls = map.rides.filter(
-        (ride) =>
-          ride.status == "open" && (ride.type === 28 || ride.type === 30)
-      );
+      const stalls = map.rides.filter((ride) => ride.status == "open" && (ride.type === 28 || ride.type === 30));
       const met = stalls.length >= 7;
       return {
-        text: status(
-          `At least 7 food and drink stalls (Currently: ${stalls.length})`,
-          met
-        ),
+        text: status(`At least 7 food and drink stalls (Now: ${stalls.length})`, met),
         met,
       };
     },
     () => {
       let shopItems = Array<Number>();
       map.rides.forEach((ride) => {
-        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30))
-          return false;
+        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30)) return false;
 
         if (shopItems.indexOf(ride.object.shopItem) !== -1) return false;
 
@@ -460,25 +448,16 @@ const bestParkFoodAward = new Award({
       });
       const met = shopItems.length >= 4;
       return {
-        text: status(
-          `At least 4 unique stalls (Currently: ${shopItems.length})`,
-          met
-        ),
+        text: status(`At least 4 unique stalls (Now: ${shopItems.length})`, met),
         met,
       };
     },
     () => {
-      const stalls = map.rides.filter(
-        (ride) =>
-          ride.status == "open" && (ride.type === 28 || ride.type === 30)
-      );
+      const stalls = map.rides.filter((ride) => ride.status == "open" && (ride.type === 28 || ride.type === 30));
       const met = stalls.length >= park.guests / 128;
       return {
         text: status(
-          `At least 1 stall per 128 guests (Currently: ${(
-            stalls.length /
-            (park.guests / 128)
-          ).toFixed(2)})`,
+          `At least 1 stall per 128 guests (Now: ${(stalls.length / (park.guests / 128) || 0).toFixed(2)})`,
           met
         ),
         met,
@@ -488,10 +467,7 @@ const bestParkFoodAward = new Award({
       const hungryCount = AwardsManager.thoughts.hungry || 0;
       const met = hungryCount <= 12;
       return {
-        text: status(
-          `12 or fewer guests think they are hungry (Currently: ${hungryCount})`,
-          met
-        ),
+        text: status(`12 or fewer guests think they are hungry (Now: ${hungryCount})`, met),
         met,
       };
     },
@@ -505,8 +481,7 @@ const worstParkFoodAward = new Award({
     () => {
       let shopItems = Array<Number>();
       map.rides.forEach((ride) => {
-        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30))
-          return false;
+        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30)) return false;
 
         if (shopItems.indexOf(ride.object.shopItem) !== -1) return false;
 
@@ -515,25 +490,16 @@ const worstParkFoodAward = new Award({
       });
       const met = shopItems.length <= 2;
       return {
-        text: status(
-          `2 or fewer unique stalls (Currently: ${shopItems.length})`,
-          met
-        ),
+        text: status(`2 or fewer unique stalls (Now: ${shopItems.length})`, met),
         met,
       };
     },
     () => {
-      const stalls = map.rides.filter(
-        (ride) =>
-          ride.status == "open" && (ride.type === 28 || ride.type === 30)
-      );
+      const stalls = map.rides.filter((ride) => ride.status == "open" && (ride.type === 28 || ride.type === 30));
       const met = stalls.length <= park.guests / 256;
       return {
         text: status(
-          `Less than 1 stall per 256 guests (Currently: ${(
-            stalls.length /
-            (park.guests / 256)
-          ).toFixed(2)})`,
+          `Less than 1 stall per 256 guests (Now: ${(stalls.length / (park.guests / 256) || 0).toFixed(2)})`,
           met
         ),
         met,
@@ -543,10 +509,7 @@ const worstParkFoodAward = new Award({
       const hungryCount = AwardsManager.thoughts.hungry || 0;
       const met = hungryCount > 15;
       return {
-        text: status(
-          `More than 15 guests are hungry (Currently: ${hungryCount})`,
-          met
-        ),
+        text: status(`More than 15 guests are hungry (Now: ${hungryCount})`, met),
         met,
       };
     },
@@ -560,20 +523,14 @@ const mostDisappointingParkAward = new Award({
     () => {
       const met = park.rating <= 650;
       return {
-        text: status(
-          `Park rating is 650 or less (Currently: ${park.rating})`,
-          met
-        ),
+        text: status(`Park rating is 650 or less (Now: ${park.rating})`, met),
         met,
       };
     },
     () => {
       const met = false;
       return {
-        text: status(
-          `TODO: More than half of rides have a satisfaction of 6 or less`,
-          met
-        ),
+        text: status(`Not Yet Implemented: More than half of rides have a satisfaction of 6 or less`, met),
         met,
       };
     },
@@ -597,10 +554,7 @@ const bestWaterRidesAward = new Award({
       }
       const met = waterRideCount >= 6;
       return {
-        text: status(
-          `At least 6 water rides are open and haven't crashed (Currently: ${waterRideCount})`,
-          met
-        ),
+        text: status(`At least 6 water rides are open and haven't crashed (Now: ${waterRideCount})`, met),
         met,
       };
     },
@@ -613,10 +567,18 @@ const mostConfusingParkLayoutAward = new Award({
   requirements: [
     () => {
       const lostGuestsCount = (AwardsManager.thoughts.lost || 0) + (AwardsManager.thoughts.cant_find || 0);
-      const met = lostGuestsCount >= 10 && lostGuestsCount > park.guests / 64;
+      const met = lostGuestsCount >= 10;
+      return {
+        text: status(`At least 10 guests are lost (Now: ${lostGuestsCount})`, met),
+        met,
+      };
+    },
+    () => {
+      const lostGuestsCount = (AwardsManager.thoughts.lost || 0) + (AwardsManager.thoughts.cant_find || 0);
+      const met = lostGuestsCount > park.guests / 64;
       return {
         text: status(
-          `More than 15 guests are lost (Currently: ${lostGuestsCount})`,
+          `More than ${Math.floor(park.guests / 64)} (1/64th of the guests) are lost (Now: ${lostGuestsCount})`,
           met
         ),
         met,
@@ -642,10 +604,7 @@ const bestGentleRideAward = new Award({
       }
       const met = gentleRideCount >= 10;
       return {
-        text: status(
-          `At least 10 gentle rides are open and haven't crashed (Currently: ${gentleRideCount})`,
-          met
-        ),
+        text: status(`At least 10 gentle rides are open and haven't crashed (Now: ${gentleRideCount})`, met),
         met,
       };
     },
@@ -661,19 +620,14 @@ const mostDazzlingRideColourSchemeAward = new Award({
       for (const ride of map.rides) {
         if (
           ride.classification === "ride" &&
-          ride.colourSchemes.some(
-            (scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1
-          )
+          ride.colourSchemes.some((scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1)
         ) {
           dazzlingRideCount++;
         }
       }
       const met = dazzlingRideCount >= 5;
       return {
-        text: status(
-          `At least 5 rides with dazzling colour schemes (Currently: ${dazzlingRideCount})`,
-          met
-        ),
+        text: status(`At least 5 rides with dazzling colour schemes (Now: ${dazzlingRideCount})`, met),
         met,
       };
     },
@@ -685,20 +639,14 @@ const mostDazzlingRideColourSchemeAward = new Award({
 
         rideCount++;
 
-        if (
-          ride.colourSchemes.some(
-            (scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1
-          )
-        ) {
+        if (ride.colourSchemes.some((scheme) => DAZZLING_COLOURS.indexOf(scheme.main) !== -1)) {
           dazzlingRideCount++;
         }
       }
       const met = dazzlingRideCount >= rideCount - dazzlingRideCount;
       return {
         text: status(
-          `Half or more rides (${Math.ceil(
-            rideCount / 2
-          )}) have a dazzling colour scheme (Currently: ${dazzlingRideCount})`,
+          `Half or more rides (${Math.ceil(rideCount / 2)}) have a dazzling colour scheme (Now: ${dazzlingRideCount})`,
           met
         ),
         met,
@@ -706,6 +654,47 @@ const mostDazzlingRideColourSchemeAward = new Award({
     },
   ],
 });
+
+const categorizedAwards = [
+  new AwardsCategory({
+    image: 5466,
+    id: "park",
+    name: "Park awards",
+    awards: [
+      tidiestParkAward,
+      bestValueParkAward,
+      mostBeautifulParkAward,
+      safestParkAward,
+      bestStaffAward,
+      bestParkFoodAward,
+    ],
+  }),
+  new AwardsCategory({
+    image: 5442,
+    id: "rides",
+    name: "Ride awards",
+    awards: [
+      bestRollerCoastersAward,
+      bestParkToiletsAward,
+      bestWaterRidesAward,
+      bestCustomDesignedRidesAward,
+      mostDazzlingRideColourSchemeAward,
+      bestGentleRideAward,
+    ],
+  }),
+  new AwardsCategory({
+    image: 5284,
+    id: "negative",
+    name: "Negative awards",
+    awards: [
+      mostUntidyParkAward,
+      worstValueParkAward,
+      worstParkFoodAward,
+      mostDisappointingParkAward,
+      mostConfusingParkLayoutAward,
+    ],
+  }),
+];
 
 export class AwardsManager {
   static thoughts: Record<string, number> = {};
@@ -721,79 +710,27 @@ export class AwardsManager {
     "cant_find",
   ];
 
-  static updateGuests(): void {
-    const start = new Date();
+  static updateState(): void {
+    //const start = new Date();
     const guests = map.getAllEntities("guest");
 
     AwardsManager.thoughts = {};
 
     for (const guest of guests) {
       for (const thought of guest.thoughts) {
-        if (
-          thought.freshness <= 5 &&
-          AwardsManager.thoughtTypes.indexOf(thought.type) !== -1
-        ) {
-          AwardsManager.thoughts[thought.type] =
-            (AwardsManager.thoughts[thought.type] || 0) + 1;
+        if (thought.freshness <= 5 && AwardsManager.thoughtTypes.indexOf(thought.type) !== -1) {
+          AwardsManager.thoughts[thought.type] = (AwardsManager.thoughts[thought.type] || 0) + 1;
         }
       }
     }
 
-    const end = new Date();
-    console.log(
-      `AwardsManager.updateGuests() took ${end.getTime() - start.getTime()}ms`
-    );
+    // const end = new Date();
+    // console.log(
+    //   `AwardsManager.updateState() took ${end.getTime() - start.getTime()}ms`
+    // );
   }
 
-  static getAwards(): Award[] {
-    return awards;
+  static getCategorizedAwards(): AwardsCategory[] {
+    return categorizedAwards;
   }
 }
-AwardsManager.updateGuests(); // Initialize the guests array
-
-// Exported awards array
-const awards: Award[] = [
-  mostUntidyParkAward,
-  tidiestParkAward,
-  bestRollerCoastersAward,
-  bestValueParkAward,
-  mostBeautifulParkAward,
-  worstValueParkAward,
-  safestParkAward,
-  bestStaffAward,
-  bestParkFoodAward,
-  worstParkFoodAward,
-  bestParkToiletsAward,
-  mostDisappointingParkAward,
-  bestWaterRidesAward,
-  bestCustomDesignedRidesAward,
-  mostDazzlingRideColourSchemeAward,
-  mostConfusingParkLayoutAward,
-  bestGentleRideAward,
-];
-
-const categorizedAwards = {
-  park: [
-    tidiestParkAward,
-    bestValueParkAward,
-    mostBeautifulParkAward,
-    safestParkAward,
-    bestStaffAward,
-    bestParkFoodAward,
-    bestParkToiletsAward,
-  ],
-  rides: [
-    bestRollerCoastersAward,
-    bestWaterRidesAward,
-    bestCustomDesignedRidesAward,
-    mostDazzlingRideColourSchemeAward,
-    bestGentleRideAward,
-  ],
-  negative: [
-    mostUntidyParkAward,
-    worstValueParkAward,
-    worstParkFoodAward,
-    mostDisappointingParkAward,
-    mostConfusingParkLayoutAward,
-  ],
-};
