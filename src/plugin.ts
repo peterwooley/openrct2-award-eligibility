@@ -4,7 +4,7 @@ import { startup } from "./startup";
 
 registerPlugin({
 	name: "OpenRCT2 Award Eligibility",
-	version: "1.0",
+	version: "0.0.1",
 	authors: [ "peterwooley" ],
 	type: "remote",
 	licence: "MIT",
