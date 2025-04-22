@@ -1,17 +1,19 @@
 # OpenRCT2 Award Eligibility Plugin
 
-The OpenRCT2 Award Eligibility plugin gives you a detailed breakdown of park awards in OpenRCT2. It displays whether your park currently meets the requirements for each award, including the current value to help you reach meet the requirement.
+The OpenRCT2 Award Eligibility plugin gives you a detailed breakdown of park awards requirements and if your park meets each one. It also provides the current value to help you reach meet the requirement or stop meeting the requirements for negative awards!
+
+<img src="images/openrct2-award-eligibility-rides-tab.png" style="max-width: 460px" alt="OpenRCT2 Award Eligibility Plugin Rides Tab Screenshot">
 
 ## Features
 
-- Displays a list of all park awards.
-- Shows whether your park is eligible for each award.
-- Provides detailed requirements for each award, including which criteria are met and which are not.
-- Updates dynamically every second.
+- Displays a list of park awards across three tabs.
+- Highlights the awards you're eligible for.
+- Provides detailed requirements for each award, showing which criteria are met and which are not.
+- Updates every second when the plugin window is active.
 
 ## Current Limitations
 
-- **Incomplete Requirements**: Some award eligibility requirements are not fully implemented.
+- **Incomplete Requirements**: Some award eligibility requirements are not fully implemented as they're either unavailable in the current plugin API or I'm just not clever enough to figure it out yet.
   - **For Most Awards**: It's currently not possible to check which awards are currently active through the plugin API. If and when I'm able to get it added to the API, I'll add new requirements for the affected awards.
   - **Most Disappointing Park Award**: Requirement for "More than half of rides have a satisfaction of 6 or less" is not yet implemented. I don't believe ride satisfaction is available through the plugin API. I'll work on getting it added.
   - **Safest Park Award**: Requirement for "No recent crashes" is not yet implemented. It's possible to see if a ride has ever crashed, but accessing the more complicated recent crashes metric does not appear to be exposed in the plugin API. I'll ask the devs if I just missed or if it can be added.
