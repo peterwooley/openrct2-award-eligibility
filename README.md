@@ -2,7 +2,7 @@
 
 The OpenRCT2 Award Eligibility plugin gives you a detailed breakdown of park awards requirements and if your park meets each one. It also provides the current value to help you reach meet the requirement or stop meeting the requirements for negative awards!
 
-<img src="images/openrct2-award-eligibility-park-tab.png" style="width:460px; max-width: 100%" alt="OpenRCT2 Award Eligibility Plugin Rides Tab Screenshot">
+<img src="https://raw.githubusercontent.com/peterwooley/openrct2-award-eligibility/main/images/openrct2-award-eligibility-park-tab.png" style="width:460px; max-width: 100%" alt="OpenRCT2 Award Eligibility Plugin Park Tab Screenshot">
 
 ## Features
 
