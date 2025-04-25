@@ -1,7 +1,7 @@
 const RIDE_LIFECYCLE_CRASHED = 1 << 10;
 const RIDE_LIFECYCLE_NOT_CUSTOM_DESIGN = 1 << 18;
 
-// TODO: See if API allows checking for ride category, or request it to be added to the API
+// TODO: See if API allows checking for ride category, or request it be added to the API
 const GENTLE_RIDE_IDS = [
   11, // Car Ride
   14, // Observation Tower
