@@ -23,8 +23,8 @@ The OpenRCT2 Award Eligibility plugin gives you a detailed breakdown of park awa
 
 ## Installation and Use
 
-1. Download the `openrct2-award-eligibility.js` file from the latest Release on GitHub and place it in your OpenRCT2 plugin directory.
-  * You can find the user directory via the “Open custom content folder” option under the red toolbox button in the game's title screen. [#](https://github.com/OpenRCT2/OpenRCT2/blob/317d8c4970d709986391e221928a2843dab1a068/distribution/scripting.md?plain=1#L11)
+1. Download the `openrct2-award-eligibility.js` file from [the latest Release on GitHub](https://github.com/peterwooley/openrct2-award-eligibility/releases/latest) and place it in your OpenRCT2 plugin directory.
+  * You can find the user directory via the "Open custom content folder" option under the red toolbox button in the game's title screen. [#](https://github.com/OpenRCT2/OpenRCT2/blob/317d8c4970d709986391e221928a2843dab1a068/distribution/scripting.md?plain=1#L11)
 2. Start OpenRCT2 and load a save or start a new game.
 3. Open the plugin by typing `Shift+A` (the default keybinding) or by pressing and holding the Map icon (right of the eyeball icon), sliding down, and clicking "Award Eligibility".
 4. Review the list of awards and their requirements to see which awards your park is eligible for.
