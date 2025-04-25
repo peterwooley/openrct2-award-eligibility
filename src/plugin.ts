@@ -4,9 +4,9 @@ import { startup } from "./startup";
 
 registerPlugin({
 	name: "OpenRCT2 Award Eligibility",
-	version: "0.0.1",
+	version: "1.0.0-alpha",
 	authors: [ "peterwooley" ],
-	type: "remote",
+	type: "local",
 	licence: "MIT",
 	/**
 	 * This field determines which OpenRCT2 API version to use. It's best to always use the
