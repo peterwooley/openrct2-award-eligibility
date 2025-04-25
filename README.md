@@ -6,10 +6,10 @@ The OpenRCT2 Award Eligibility plugin gives you a detailed breakdown of park awa
 
 ## Features
 
-- Displays a list of park awards across three tabs.
-- Highlights the awards you're eligible for.
-- Provides detailed requirements for each award, showing which criteria are met and which are not.
-- Updates every second when the plugin window is active.
+- Displays a list of park awards across three tabs
+- Highlights the awards you're eligible for
+- Provides detailed requirements for each award, showing which criteria are met and which are not
+- Updates every second when the plugin window is active
 
 ## Current Limitations
 
