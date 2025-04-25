@@ -450,17 +450,17 @@ const bestParkFoodAward = new Award({
     },
     () => {
       let shopItems = Array<Number>();
-      map.rides.forEach((ride) => {
-        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30)) return false;
+      for (let i = 0; i < map.rides.length; i++) {
+        const ride = map.rides[i];
+        if (ride.type !== 28 || ride.status !== "open") continue;
 
-        if (shopItems.indexOf(ride.object.shopItem) !== -1) return false;
+        if (shopItems.indexOf(ride.object.shopItem) !== -1) continue;
 
         shopItems.push(ride.object.shopItem);
-        return true;
-      });
+      }
       const met = shopItems.length >= 4;
       return {
-        text: status(`At least 4 unique stalls (Now: ${shopItems.length})`, met),
+        text: status(`At least 4 unique food stalls (Now: ${shopItems.length})`, met),
         met,
       };
     },
@@ -492,17 +492,17 @@ const worstParkFoodAward = new Award({
   requirements: [
     () => {
       let shopItems = Array<Number>();
-      map.rides.forEach((ride) => {
-        if (ride.status != "open" || !(ride.type === 28 || ride.type === 30)) return false;
+      for (let i = 0; i < map.rides.length; i++) {
+        const ride = map.rides[i];
+        if (ride.type !== 28 || ride.status !== "open") continue;
 
-        if (shopItems.indexOf(ride.object.shopItem) !== -1) return false;
+        if (shopItems.indexOf(ride.object.shopItem) !== -1) continue;
 
         shopItems.push(ride.object.shopItem);
-        return true;
-      });
+      }
       const met = shopItems.length <= 2;
       return {
-        text: status(`2 or fewer unique stalls (Now: ${shopItems.length})`, met),
+        text: status(`2 or fewer unique food stalls (Now: ${shopItems.length})`, met),
         met,
       };
     },
