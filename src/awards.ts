@@ -107,13 +107,25 @@ export class Award {
   }
 
   formatName(isEligible: boolean = false): string {
-    return isEligible ? `{GREEN}${this.name}` : this.name;
+    return isEligible ? `{GREEN}${this.name}` : `{WINDOW_COLOUR_3}${this.name}`;
   }
 }
 
-function status(string: string, met: boolean): string {
-  return met ? `{INLINE_SPRITE}{161}{15}{00}{00} ${string}` : `{INLINE_SPRITE}{162}{15}{00}{00}  ${string}`;
+function status(string: string, met: boolean | "NOT_IMPLEMENTED"): string {
+  if (met === "NOT_IMPLEMENTED") {
+    return `{SMALLFONT}  {INLINE_SPRITE}{9}{20}{00}{00}   {WINDOW_COLOUR_1}(Not yet implemented)  {WINDOW_COLOUR_3}${string}`; // Blue information icon
+  }
+  return met
+    ? `{SMALLFONT}{INLINE_SPRITE}{10}{20}{00}{00} {CELADON}${string}` // Green up arrow icon
+    : `{SMALLFONT}{INLINE_SPRITE}{11}{20}{00}{00} {LIGHTPINK}${string}`; // Red down arrow icon
 }
+// {INLINE_SPRITE}{158}{90}{00}{00} // Thumbs up
+// {INLINE_SPRITE}{157}{90}{00}{00} // Thumbs down
+// {INLINE_SPRITE}{200}{114}{00}{00} // Green light
+// {INLINE_SPRITE}{192}{114}{00}{00} // Red light icon
+// {INLINE_SPRITE}{52}{15}{00}{00} // Question mark icon
+// {INLINE_SPRITE}{161}{15}{00}{00} // Checkmark icon
+// {INLINE_SPRITE}{162}{15}{00}{00} // Cross icon
 
 class AwardsCategory {
   image: number;

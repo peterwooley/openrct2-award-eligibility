@@ -162,11 +162,11 @@ export function getAwardsWindow(): WindowTemplate {
   if (template) return template;
 
   return (template = tabwindow({
-    width: 480,
+    width: 460,
     height: "auto",
     padding: {top: 5, left: 5, right: 10, bottom: 10},
     title: "Award Eligibility",
-    colours: [Colour.Grey, Colour.DarkYellow, Colour.Yellow],
+    colours: [Colour.DarkBrown, Colour.DullBrownDark, Colour.DullBrownLight],
     tabs: viewModel.container,
     onTabChange: (tab) => viewModel.updateTab(tab),
     onUpdate: () => viewModel.check(),
