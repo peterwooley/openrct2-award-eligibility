@@ -198,6 +198,12 @@ const mostUntidyParkAward = new Award({
         met,
       };
     },
+    () => {
+      return {
+        text: status("Awards must not be active: Most beautiful, Best staff, or Most tidy", "NOT_IMPLEMENTED"),
+        met: true,
+      };
+    },
   ],
 });
 
@@ -228,6 +234,12 @@ const tidiestParkAward = new Award({
           met
         ),
         met,
+      };
+    },
+    () => {
+      return {
+        text: status("Awards must not be active: Most untidy or Most disappointing", "NOT_IMPLEMENTED"),
+        met: true,
       };
     },
   ],
@@ -292,6 +304,12 @@ const bestValueParkAward = new Award({
         met,
       };
     },
+    () => {
+      return {
+        text: status("Awards must not be active: Worst value or Most disappointing", "NOT_IMPLEMENTED"),
+        met: true,
+      };
+    },
   ],
 });
 
@@ -323,6 +341,12 @@ const worstValueParkAward = new Award({
         met,
       };
     },
+    () => {
+      return {
+        text: status("Award must not be active: Best value", "NOT_IMPLEMENTED"),
+        met: true,
+      };
+    },
   ],
 });
 
@@ -349,6 +373,12 @@ const bestCustomDesignedRidesAward = new Award({
       return {
         text: status(`At least 6 open custom-designed rides that haven't crashed (Now: ${customRideCount})`, met),
         met,
+      };
+    },
+    () => {
+      return {
+        text: status("Awards must not be active: Most disappointing", "NOT_IMPLEMENTED"),
+        met: true,
       };
     },
   ],
@@ -383,6 +413,12 @@ const mostBeautifulParkAward = new Award({
         met,
       };
     },
+    () => {
+      return {
+        text: status("Awards must not be active: Most untidy or Most disappointing", "NOT_IMPLEMENTED"),
+        met: true,
+      };
+    },
   ],
 });
 
@@ -409,6 +445,13 @@ const bestStaffAward = new Award({
         met,
       };
     },
+    () => {
+      const met = true;
+      return {
+        text: status(`Award must not be active: Most untidy`, "NOT_IMPLEMENTED"),
+        met: met,
+      };
+    },
   ],
 });
 
@@ -427,9 +470,9 @@ const safestParkAward = new Award({
       };
     },
     () => {
-      const met = false;
+      const met = true;
       return {
-        text: status(`Not Yet Implemented: No recent crashes`, met),
+        text: status(`No recent crashes`, "NOT_IMPLEMENTED"),
         met,
       };
     },
@@ -483,6 +526,13 @@ const bestParkFoodAward = new Award({
         met,
       };
     },
+    () => {
+      const met = true;
+      return {
+        text: status(`Award must not be active: Worst food`, "NOT_IMPLEMENTED"),
+        met: met,
+      };
+    },
   ],
 });
 
@@ -525,6 +575,13 @@ const worstParkFoodAward = new Award({
         met,
       };
     },
+    () => {
+      const met = true;
+      return {
+        text: status(`Award must not be active: Best food`, "NOT_IMPLEMENTED"),
+        met: met,
+      };
+    },
   ],
 });
 
@@ -540,10 +597,17 @@ const mostDisappointingParkAward = new Award({
       };
     },
     () => {
-      const met = false;
+      const met = true;
       return {
-        text: status(`Not Yet Implemented: More than half of rides have a satisfaction of 6 or less`, met),
+        text: status(`More than half of rides have a satisfaction of 6 or less`, "NOT_IMPLEMENTED"),
         met,
+      };
+    },
+    () => {
+      const met = true;
+      return {
+        text: status(`Award must not be active: Best value`, "NOT_IMPLEMENTED"),
+        met: met,
       };
     },
   ],
@@ -662,6 +726,13 @@ const mostDazzlingRideColourSchemeAward = new Award({
           met
         ),
         met,
+      };
+    },
+    () => {
+      const met = true;
+      return {
+        text: status(`Award must not be active: Most disappointing`, "NOT_IMPLEMENTED"),
+        met: met,
       };
     },
   ],
